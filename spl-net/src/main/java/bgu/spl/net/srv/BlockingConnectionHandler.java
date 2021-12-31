@@ -7,7 +7,7 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 
-public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler<T> {
+public class BlockingConnectionHandler<T> implements Runnable, java.io.Closeable {
 
     private final MessagingProtocol<T> protocol;
     private final MessageEncoderDecoder<T> encdec;
@@ -52,4 +52,15 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
         connected = false;
         sock.close();
     }
+
+    //TODO:
+    public void write(T msg) {
+        try {
+            out.write(encdec.encode(msg));
+            out.flush();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
 }

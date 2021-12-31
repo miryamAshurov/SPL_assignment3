@@ -1,4 +1,9 @@
-package bgu.spl.net.srv;
+package bgu.spl.net.srv.bidi;
+
+import bgu.spl.net.srv.Notification;
+import bgu.spl.net.srv.PM;
+import bgu.spl.net.srv.Post;
+import bgu.spl.net.srv.User;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,13 +30,10 @@ public class DataBase {
     public boolean registerUser (String username, String password, String date){
         if (checkIfUsernameAlreadyExists(username)){
             return false;
-            // If the username is already registerd in
-            //the server, an ERROR message is returned
         }else {
             User user = new User(username, password, date);
             registerdUserList.add(user);
             return true;
-            //If successful an ACK message will be sent in return
         }
     }
 

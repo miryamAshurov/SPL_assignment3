@@ -1,12 +1,11 @@
 package bgu.spl.net.srv;
 
-import bgu.spl.net.impl.rci.ObjectEncoderDecoder;
+import bgu.spl.net.srv.bidi.BGSProtocol;
+import bgu.spl.net.srv.bidi.BidiMessageEncoderDecoder;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 public class Main {
 
@@ -78,8 +77,8 @@ public class Main {
             msg =  encdec.decodeNextByte(bs[i++]);
         }
         System.out.println("msg: " + msg);
-        BGSProtocol b= new BGSProtocol();
-        b.process(msg);
+        //BGSProtocol b= new BGSProtocol();
+       // b.process(msg);
 
     }
 
