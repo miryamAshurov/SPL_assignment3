@@ -3,7 +3,7 @@ package bgu.spl.net.srv;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Post {
+public class Post extends Message {
 
     private String post;
     private List<User> followersReceiv = new ArrayList<>();

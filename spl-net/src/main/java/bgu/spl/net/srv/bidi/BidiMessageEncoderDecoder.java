@@ -1,8 +1,6 @@
 package bgu.spl.net.srv.bidi;
 
 import bgu.spl.net.api.MessageEncoderDecoder;
-
-import javax.swing.event.ListDataEvent;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -43,21 +41,17 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<List<Obj
             size += bytesArray.length;
             encodedBytes.add(bytesArray);
         }
-        int i=0;
-        byte[] encodedMsg = new byte[size+1];
+        int i = 0;
+        byte[] encodedMsg = new byte[size + 1];
         for (byte[] encBytes: encodedBytes){
             for (byte b: encBytes){
-                encodedMsg[i]=b;
+                encodedMsg[i] = b;
                 i++;
             }
         }
-        encodedMsg[encodedMsg.length-1] = (byte)';';
+        encodedMsg[encodedMsg.length - 1] = (byte)';';
         return encodedMsg;
     }
-
-
-
-
 
     private List<Object> popMessage() {
         byte[] opcodeBytes = new byte[2];
@@ -68,7 +62,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<List<Obj
         result.add(opcode);
         List<Integer> zeroIndexes = new LinkedList<>();
         for (int i = 2; i <len ; i++) {
-            if (bytes[i]==0){
+            if (bytes[i] == 0){
                 zeroIndexes.add(i);
             }
         }
@@ -78,28 +72,28 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<List<Obj
             case 5: //Post
             case 6: //PM
             case 8: //STAT
-                i=2;
+                i = 2;
                 for (int index: zeroIndexes) {
-                    String s = new String(bytes, i, index-i, StandardCharsets.UTF_8);
+                    String s = new String(bytes, i, index - i, StandardCharsets.UTF_8);
                     result.add(s);
                     result.add((short)0);
                     i=index+1;
                 }
                 break;
             case 2: //Login
-                i=2;
-                int lastIndex = zeroIndexes.get(zeroIndexes.size()-1);
-                int secondLastIndex = zeroIndexes.get(zeroIndexes.size()-2);
-                boolean isOne=false;
+                i = 2;
+                int lastIndex = zeroIndexes.get(zeroIndexes.size() - 1);
+                int secondLastIndex = zeroIndexes.get(zeroIndexes.size() - 2);
+                boolean isOne = false;
                 if (lastIndex != secondLastIndex + 1){ //checks if captcha is 1 {
                     zeroIndexes.add(lastIndex + 1);
-                    isOne=true;
+                    isOne = true;
                 }
                 for (int index: zeroIndexes) {
-                    String s = new String(bytes, i, index-i, StandardCharsets.UTF_8);
+                    String s = new String(bytes, i, index - i, StandardCharsets.UTF_8);
                     if (!s.isEmpty()){result.add(s);}
                     result.add((short)0);
-                    i=index+1;
+                    i = index + 1;
                 }
                 if  (isOne)  {result.set(result.size()-1, (short)1);}
                 break;
@@ -137,7 +131,6 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<List<Obj
         if (len >= bytes.length) {
             bytes = Arrays.copyOf(bytes, len * 2);
         }
-
         bytes[len++] = nextByte;
     }
 

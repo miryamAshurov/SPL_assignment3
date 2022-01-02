@@ -2,9 +2,18 @@ package bgu.spl.net.impl.newsfeed;
 
 import bgu.spl.net.impl.rci.RCIClient;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+
 public class NewsFeedClientMain {
 
     public static void main(String[] args) throws Exception {
+
+
         if (args.length == 0) {
             args = new String[]{"127.0.0.1"};
         }

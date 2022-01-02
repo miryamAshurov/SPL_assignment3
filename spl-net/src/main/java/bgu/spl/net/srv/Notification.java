@@ -1,4 +1,4 @@
 package bgu.spl.net.srv;
 
-public class Notification {
+public class Notification extends Message {
 }

@@ -29,7 +29,7 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
 
-        byte[] opcode = shortToBytes((short)8);
+        byte[] opcode = shortToBytes((short)1);
         String user = "user";
         byte [] username = user.getBytes();
 //        String content = "hello from the other side";

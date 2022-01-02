@@ -1,39 +1,58 @@
 package bgu.spl.net.srv.bidi;
 
 import bgu.spl.net.api.bidi.Connections;
-import bgu.spl.net.srv.BlockingConnectionHandler;
-
-import java.util.List;
+import bgu.spl.net.srv.User;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
-public class ConnectionsImpl implements Connections<List<Object>> {
+public class ConnectionsImpl<T> implements Connections<T> {
 
-    private ConcurrentHashMap<Integer, BlockingConnectionHandler<List<Object>>> connections = new ConcurrentHashMap<>();
-    AtomicInteger idCounter;
+    private ConcurrentHashMap<Integer, ConnectionHandler<T>> connectionsById = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Integer, User> connectionsByUser = new ConcurrentHashMap<>();
 
-    public ConnectionsImpl() {
-        this.idCounter = new AtomicInteger(0);
-    }
+    private static ConnectionsImpl instance = null;
 
-    public void addConnection(BlockingConnectionHandler<List<Object>> handler) {
-        System.out.println("New Client Connected");
-        int id = idCounter.getAndIncrement();
-        connections.put(id, handler);
+    public static ConnectionsImpl getInstance() {
+        if (instance == null) {
+            instance = new ConnectionsImpl();
+        }
+        return instance;
     }
 
     @Override
-    public boolean send(int connectionId, List<Object> msg) {
+    public boolean send(int connectionId, T msg) {
+        if (connectionsById.containsKey(connectionId)) {
+            connectionsById.get(connectionId).send(msg);
+            return true;
+        }
+        //if the connection ID doesn't exist you should return false and not proceed
         return false;
     }
 
     @Override
-    public void broadcast(List<Object> msg) {
+    public void broadcast(T msg) {
 
     }
 
     @Override
     public void disconnect(int connectionId) {
 
+    }
+
+    public void addConnection(int idCounter, ConnectionHandler<T> handler) {
+        connectionsById.put(idCounter, handler);
+    }
+
+    public void addUserForConnection(User user, int idCounter){
+        if(connectionsById.containsKey(idCounter)){
+            connectionsByUser.put(idCounter,user);
+        }
+    }
+
+    public ConcurrentHashMap<Integer, ConnectionHandler<T>> getConnectionsById() {
+        return connectionsById;
+    }
+
+    public ConcurrentHashMap<Integer, User> getConnectionsByUser() {
+        return connectionsByUser;
     }
 }

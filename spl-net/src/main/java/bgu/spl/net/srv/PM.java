@@ -1,6 +1,6 @@
 package bgu.spl.net.srv;
 
-public class PM {
+public class PM extends Message{
 
     private String message;
     private User receiver;

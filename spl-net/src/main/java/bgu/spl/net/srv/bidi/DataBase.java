@@ -1,10 +1,6 @@
 package bgu.spl.net.srv.bidi;
 
-import bgu.spl.net.srv.Notification;
-import bgu.spl.net.srv.PM;
-import bgu.spl.net.srv.Post;
-import bgu.spl.net.srv.User;
-
+import bgu.spl.net.srv.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,7 +11,7 @@ public class DataBase {
     private ConcurrentHashMap<User, List<User>> followersList = new ConcurrentHashMap<>();
     private ConcurrentHashMap<User, List<Post>> userPostList  = new ConcurrentHashMap<>();
     private ConcurrentHashMap<User, List<PM>> userPMList  = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<User, List<Notification>> userNotificationList  = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<User, List<Message>> userMessageList  = new ConcurrentHashMap<>();
     private static DataBase instance = null;
 
 
@@ -58,16 +54,16 @@ public class DataBase {
     }
 
     /*LOGIN Messages*/
-    public boolean verifyUserDetails(String username, String password , boolean captcha){
+    public User verifyUserDetails(String username, String password , boolean captcha){
         if(captcha) {
             User user = checkIfUserRegisterd(username, password);
             if (user != null) {
                 if (!user.isLogged()) {
-                    return true;
+                    return user;
                 }
             }
         }
-        return false;
+        return null;
     }
 
     public List<User> getRegisterdUserList() {
@@ -153,17 +149,16 @@ public class DataBase {
     }
 
 
-    public void addNotification(User user, Notification notification){
-        if (!this.userNotificationList.containsKey(user)){
-            this.userNotificationList.put(user,new ArrayList<>());
-        }
-        this.userNotificationList.get(user).add(notification);
-    }
+//    public void addNotification(User user, Notification notification){
+//        if (!this.userNotificationList.containsKey(user)){
+//            this.userNotificationList.put(user,new ArrayList<>());
+//        }
+//        this.userNotificationList.get(user).add(notification);
+//    }
 
-    public List<Notification> getUserNotification(User user) {
-        return userNotificationList.get(user);
-    }
-
+//    public List<Notification> getUserNotification(User user) {
+//        return userNotificationList.get(user);
+//    }
 
 
 
