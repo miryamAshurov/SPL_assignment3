@@ -9,6 +9,7 @@ public class DataBase {
 
     private List<User> registerdUserList = new ArrayList<>();
     private ConcurrentHashMap<User, List<User>> followersList = new ConcurrentHashMap<>();
+
     private ConcurrentHashMap<User, List<Post>> userPostList  = new ConcurrentHashMap<>();
     private ConcurrentHashMap<User, List<PM>> userPMList  = new ConcurrentHashMap<>();
     private ConcurrentHashMap<User, List<Message>> userMessageList  = new ConcurrentHashMap<>();
@@ -66,11 +67,6 @@ public class DataBase {
         return null;
     }
 
-    public List<User> getRegisterdUserList() {
-        return registerdUserList;
-    }
-
-
     /*LOGOUT Messages*/
 
 
@@ -78,41 +74,77 @@ public class DataBase {
     
 
     /*FOLLOW Messages*/
-    public void follow(User user, User follower){
-        if(!this.followersList.containsKey(user)){
-            this.followersList.put(user,new ArrayList<>());
+    public boolean checkIfUserFollowerOfOtherUser(User user, User other){
+        if(this.followersList.containsKey(other)){
+            if (this.followersList.get(other).contains(user)){
+                return true;
+            }
         }
-        this.followersList.get(user).add(follower);
+        return false;
     }
 
-    public void unfollow(User user, User follower){
-        if(this.followersList.containsKey(user)){
-            this.followersList.get(user).remove(follower);
+    public void follow(User user, User userToFollow){
+        if(!this.followersList.containsKey(userToFollow)){
+            this.followersList.put(userToFollow, new ArrayList<>());
         }
+        this.followersList.get(userToFollow).add(user);
+    }
+
+    public void unfollow(User user, User userToUnfollow){
+        if(this.followersList.containsKey(userToUnfollow)){
+            this.followersList.get(userToUnfollow).remove(user);
+        }
+    }
+
+    /*LOGSTAT Messages*/
+    public List<User> getRegisterdUserList() {
+        return registerdUserList;
+    }
+
+    public short age(User user){
+        return (short) user.getAge();
+    }
+
+    public short numPosts(User user){
+        short numPosts = 0;
+        if (userPostList.containsKey(user)) {
+            numPosts = (short) userPostList.get(user).size();
+        }
+        return numPosts;
+    }
+
+    public short numFollowers(User user){
+        short numFollowers = 0;
+        if (followersList.containsKey(user)) {
+            numFollowers = (short) getNumFollowersForUser(user);
+        }
+        return numFollowers;
     }
 
     public int getNumFollowersForUser(User user){
         return followersList.get(user).size();
     }
 
+    public short numFollowing(User user){
+        return (short) getFollowingNumForUser(user);
+    }
+
     public int getFollowingNumForUser(User user){
-        int output = 0;
+        final int[] output = {0};
         followersList.forEach((k, v) -> {
             for (User user1 : v) {
                 if(user.equals(user1)){
-
+                    output[0] = output[0] + 1;
                 }
-
             }
-
-            System.out.println((k + ":" + v));
         });
-        return output;
+        return output[0];
     }
 
-    public List<User> getFollowersListForUser(User user) {
-        return followersList.get(user);
-    }
+
+
+
+
 
     public void addPost(User user, Post post){
         if (!this.userPostList.containsKey(user)){
@@ -160,6 +192,14 @@ public class DataBase {
 //        return userNotificationList.get(user);
 //    }
 
+    public User getUserByName(String name) {
+        for (User user : registerdUserList) {
+            if (user.getUsername().equals(name)) {
+                return user;
+            }
+        }
+        return null;
+    }
 
 
 }

@@ -1,7 +1,5 @@
 package bgu.spl.net.impl.BGSServer;
 
-import bgu.spl.net.srv.bidi.DataBase;
-
 import java.io.*;
 import java.net.Socket;
 import java.util.Arrays;
@@ -77,36 +75,23 @@ public class ClientMain {
 
 
 
-        byte[] opcode = shortToBytes((short)2);
-        String user = "Miryam";
-        byte [] username = user.getBytes();
-        String pass = "pass";
-        byte [] password = pass.getBytes();
+        byte[] opcode = shortToBytes((short)3);
 
-        pushByte((byte) '\0');
+    //    pushByte((byte) '\0');
         for (byte b : opcode) {
             pushByte(b);
         }
-        for (byte b : username) {
-            pushByte(b);
-        }
-        pushByte((byte) '\0');
-        for (byte b : password) {
-            pushByte(b);
-        }
-        pushByte((byte) '\0');
-        pushByte((byte) '\1');
         pushByte((byte) ';');
 
         dataOutputStream.write(bytes);
         dataOutputStream.flush(); // send the message
 
-        System.out.println("message from server: " );
-        for ( int i = 0; i < dataInputStream.available(); i++ )
-        {
-            byte ch = dataInputStream.readByte();
-            System.out.print((char) ch + "(" + ch + ")");
-        }
+//        System.out.println("message from server: " );
+//        for ( int i = 0; i < dataInputStream.available(); i++ )
+//        {
+//            byte ch = dataInputStream.readByte();
+//            System.out.print((char) ch + "(" + ch + ")");
+//        }
 
 
         dataOutputStream.close(); // close the output stream when we're done.
@@ -133,7 +118,7 @@ public class ClientMain {
 //        dataOutputStream.close(); // close the output stream when we're done.
 //
 //        System.out.println("Closing socket and terminating program.");
-//        socket.close();
+        socket.close();
     }
 
 

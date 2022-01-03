@@ -2,7 +2,6 @@ package bgu.spl.net.srv.bidi;
 
 import bgu.spl.net.api.bidi.BidiMessagingProtocol;
 import bgu.spl.net.api.bidi.Connections;
-import bgu.spl.net.srv.BlockingConnectionHandler;
 import bgu.spl.net.srv.User;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -45,7 +44,7 @@ public class BGSProtocol implements BidiMessagingProtocol<List<Object>> {
                 String regUsername = userData[0]; String regPassword = userData[1]; String regDate = userData[2];
                 Boolean ans1 = dataBase.registerUser(regUsername, regPassword, regDate);
                 if(ans1){
-                    connections.send(connectionId,ackResponse(1));
+                    connections.send(connectionId, ackFirstResponse(1));
                     //If successful an ACK message will be sent in return
                 }else {
                     connections.send(connectionId,errorResponse());
@@ -69,7 +68,7 @@ public class BGSProtocol implements BidiMessagingProtocol<List<Object>> {
                 if(newUser != null){
                     newUser.logIn();
                     connections.addUserForConnection(newUser, connectionId);
-                    connections.send(connectionId,ackResponse(2));
+                    connections.send(connectionId, ackFirstResponse(2));
                     //If successful an ACK message will be sent in return
                 } else {
                     connections.send(connectionId,errorResponse());
@@ -80,12 +79,12 @@ public class BGSProtocol implements BidiMessagingProtocol<List<Object>> {
                 }
                 break;
             case 3: //Logout
-                if(connections.getConnectionsByUser().containsKey(connectionId)){
-                    connections.send(connectionId,ackResponse(3));
+                if(connections.checkIfUserLogIn(connectionId)){
+                    connections.send(connectionId, ackFirstResponse(3));
                     User user = (User) connections.getConnectionsByUser().get(connectionId);
                     user.logOut();
                     connections.getConnectionsByUser().remove(connectionId);
-                    BlockingConnectionHandler handler = (BlockingConnectionHandler) connections.getConnectionsById().get(connectionId);
+                    ConnectionHandler handler = (ConnectionHandler) connections.getConnectionsById().get(connectionId);
                     try {
                         handler.close();
                     } catch (IOException exception){
@@ -96,19 +95,49 @@ public class BGSProtocol implements BidiMessagingProtocol<List<Object>> {
                     //Client may terminate only after reciving ACK message in replay.
                 } else {
                     connections.send(connectionId,errorResponse());
-                    // If no user is logged in, sends an ERROR message. ->
-                    // Check for a key in connectionsByUser
+                    // If no user is logged in, sends an ERROR message.
                 }
                 //TODO: Check the logic
                 break;
-            case 4: //Follow
+            case 4: // Follow(0)/Unfollow(1)
                 boolean follow = (short)iter.next() == 0;
-                String userToFollow = (String) iter.next();
-    //            dataBase.follow();
-
+                String userNameToFollow = (String) iter.next();
+                User userToFollow = dataBase.getUserByName(userNameToFollow);
+                if(connections.checkIfUserLogIn(connectionId) && userToFollow != null){
+                    User currentUser = connections.getUserByConnectionId(connectionId);
+                    if (follow){
+                        if (!dataBase.checkIfUserFollowerOfOtherUser(currentUser, userToFollow)){
+                            dataBase.follow(currentUser, userToFollow);
+                            connections.send(connectionId,ackFollowResponse(userNameToFollow));
+                        }else {
+                            connections.send(connectionId,errorResponse());
+                            //For a follow command to succeed, a user on the list must not already
+                            //be on the following list of the logged in user.
+                        }
+                    }else {
+                        if (dataBase.checkIfUserFollowerOfOtherUser(currentUser, userToFollow)) {
+                            dataBase.unfollow(currentUser, userToFollow);
+                            connections.send(connectionId,ackFollowResponse(userNameToFollow));
+                        }else {
+                            connections.send(connectionId,errorResponse());
+                        }
+                    }
+                }else {
+                    connections.send(connectionId,errorResponse());
+                    //The user must be logged in, otherwise an ERROR message will be sent.
+                }
                 break;
             case 5: //Post
+                //
                 String content = (String) iter.next();
+                User currentUser = connections.getUserByConnectionId(connectionId);
+                if(connections.checkIfUserLogIn(connectionId)){
+
+                }else {
+                    connections.send(connectionId,errorResponse());
+                    //The user must be logged in, otherwise an ERROR message will be sent.
+                }
+
 
                 break;
             case 6: //PM
@@ -128,10 +157,19 @@ public class BGSProtocol implements BidiMessagingProtocol<List<Object>> {
 
                 break;
             case 7: //LOGSTAT
-                //TODO: COMPLETE THIS METHOD
+                //TODO: Check the logic
+                if(connections.checkIfUserLogIn(connectionId)){
+                    for (User user : dataBase.getRegisterdUserList()){
+                        if(user.isLogged()){
+                            int userId = connections.getConnectionIdByUser(user);
+                            connections.send(userId, ackStatAndLogStat(7, user));
+                        }
+                    }
+                }else {
+                    connections.send(connectionId,errorResponse());
+                    //The user must be logged in, otherwise an ERROR message will be sent.
+                }
                 break;
-
-
             case 8: //STAT
                 String usersString = (String)iter.next();
                 String [] users = usersString.split("\\|");
@@ -157,11 +195,31 @@ public class BGSProtocol implements BidiMessagingProtocol<List<Object>> {
         int minuets = Integer.parseInt(time[1]);
         return LocalDateTime.of(years,months,days,hours,minuets);
     }
-
-    private List<Object> ackResponse(int op){
+    
+    private List<Object> ackFirstResponse(int op){
         List<Object> output = new ArrayList<>();
         output.add(((short)10));
         output.add(((short)op));
+        return output;
+    }
+
+    private List<Object> ackFollowResponse(String UserName){
+        List<Object> output = new ArrayList<>();
+        output.add(((short)10));
+        output.add(((short)4));
+        output.add(UserName);
+        output.add('\0');
+        return output;
+    }
+
+    private List<Object> ackStatAndLogStat(int op, User user){
+        List<Object> output = new ArrayList<>();
+        output.add(((short)10));
+        output.add(((short)op));
+        output.add(dataBase.age(user)); //<Age>
+        output.add(dataBase.numPosts(user)); //<NumPosts>
+        output.add(dataBase.numFollowers(user)); //<NumFollowers>
+        output.add(dataBase.numFollowing(user)); //<NumFollowing>
         return output;
     }
 

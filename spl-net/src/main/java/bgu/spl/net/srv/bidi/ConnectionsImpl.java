@@ -3,6 +3,7 @@ package bgu.spl.net.srv.bidi;
 import bgu.spl.net.api.bidi.Connections;
 import bgu.spl.net.srv.User;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConnectionsImpl<T> implements Connections<T> {
 
@@ -48,6 +49,24 @@ public class ConnectionsImpl<T> implements Connections<T> {
         }
     }
 
+    public boolean checkIfUserLogIn(int connectionId){
+        return getConnectionsByUser().containsKey(connectionId);
+    }
+
+    public User getUserByConnectionId(int connectionId){
+        return connectionsByUser.get(connectionId);
+    }
+
+    public int getConnectionIdByUser(User user){
+        AtomicInteger val = new AtomicInteger(-1);
+        connectionsByUser.forEach((k, v) -> {
+                if(v.equals(user)){
+                    val.set(k);
+                }
+        });
+        return val.get();
+    }
+
     public ConcurrentHashMap<Integer, ConnectionHandler<T>> getConnectionsById() {
         return connectionsById;
     }
@@ -55,4 +74,6 @@ public class ConnectionsImpl<T> implements Connections<T> {
     public ConcurrentHashMap<Integer, User> getConnectionsByUser() {
         return connectionsByUser;
     }
+
+
 }
