@@ -1,4 +1,4 @@
-package bgu.spl.net.srv.bidi;
+package bgu.spl.net.srv;
 
 import bgu.spl.net.api.MessageEncoderDecoder;
 import java.nio.charset.StandardCharsets;
@@ -72,6 +72,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<List<Obj
             case 5: //Post
             case 6: //PM
             case 8: //STAT
+            case 12: //BLOCK
                 i = 2;
                 for (int index: zeroIndexes) {
                     String s = new String(bytes, i, index - i, StandardCharsets.UTF_8);
@@ -109,6 +110,8 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<List<Obj
             case 7: //LOGSTAT
                 //has only opcode
                 break;
+
+
         }
         len = 0;
         return result;

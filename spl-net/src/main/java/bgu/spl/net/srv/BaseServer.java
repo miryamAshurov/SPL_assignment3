@@ -2,7 +2,7 @@ package bgu.spl.net.srv;
 
 import bgu.spl.net.api.MessageEncoderDecoder;
 import bgu.spl.net.api.bidi.BidiMessagingProtocol;
-import bgu.spl.net.srv.bidi.ConnectionsImpl;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -26,7 +26,6 @@ public abstract class BaseServer<T> implements Server<T> {
         this.protocolFactory = protocolFactory;
         this.encdecFactory = encdecFactory;
 		this.sock = null;
-        this.connections = ConnectionsImpl.getInstance();
         this.idCounter = 0;
     }
 
@@ -44,9 +43,8 @@ public abstract class BaseServer<T> implements Server<T> {
                         clientSock,
                         encdecFactory.get(),
                         protocolFactory.get());
-                connections.addConnection(idCounter, handler);
-                protocolFactory.get().start(idCounter,connections);
-                idCounter ++;
+                handler.init(connections,idCounter);
+                connections.addConnection(idCounter++, handler);
                 execute(handler);
             }
         } catch (IOException ex) {
@@ -63,4 +61,7 @@ public abstract class BaseServer<T> implements Server<T> {
 
     protected abstract void execute(BlockingConnectionHandler<T>  handler);
 
+    public void setConnections(ConnectionsImpl connections) {
+        this.connections = connections;
+    }
 }

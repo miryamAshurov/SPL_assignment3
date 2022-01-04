@@ -1,7 +1,7 @@
-package bgu.spl.net.srv.bidi;
+package bgu.spl.net.srv;
 
 import bgu.spl.net.api.bidi.Connections;
-import bgu.spl.net.srv.User;
+
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -60,9 +60,9 @@ public class ConnectionsImpl<T> implements Connections<T> {
     public int getConnectionIdByUser(User user){
         AtomicInteger val = new AtomicInteger(-1);
         connectionsByUser.forEach((k, v) -> {
-                if(v.equals(user)){
-                    val.set(k);
-                }
+            if(v.equals(user)){
+                val.set(k);
+            }
         });
         return val.get();
     }

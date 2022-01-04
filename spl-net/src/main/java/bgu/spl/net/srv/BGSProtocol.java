@@ -1,13 +1,11 @@
-package bgu.spl.net.srv.bidi;
+package bgu.spl.net.srv;
 
 import bgu.spl.net.api.bidi.BidiMessagingProtocol;
 import bgu.spl.net.api.bidi.Connections;
-import bgu.spl.net.srv.User;
+
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 public class BGSProtocol implements BidiMessagingProtocol<List<Object>> {
 
@@ -29,8 +27,6 @@ public class BGSProtocol implements BidiMessagingProtocol<List<Object>> {
         Iterator<Object> iter = message.iterator();
         short opcode = (short)iter.next();
 
-        boolean connectionIdExist;
-
         switch (opcode) {
             case 1: //Register
                 String[] userData = new String[3];
@@ -44,12 +40,9 @@ public class BGSProtocol implements BidiMessagingProtocol<List<Object>> {
                 String regUsername = userData[0]; String regPassword = userData[1]; String regDate = userData[2];
                 Boolean ans1 = dataBase.registerUser(regUsername, regPassword, regDate);
                 if(ans1){
-                    connections.send(connectionId, ackFirstResponse(1));
-                    //If successful an ACK message will be sent in return
+                    connections.send(connectionId, ackFirstResponse(opcode));
                 }else {
-                    connections.send(connectionId,errorResponse());
-                    // If the username is already registerd in
-                    //the server, an ERROR message is returned
+                    connections.send(connectionId,errorResponse(opcode));
                 }
                 break;
             case 2: //Login
@@ -68,19 +61,14 @@ public class BGSProtocol implements BidiMessagingProtocol<List<Object>> {
                 if(newUser != null){
                     newUser.logIn();
                     connections.addUserForConnection(newUser, connectionId);
-                    connections.send(connectionId, ackFirstResponse(2));
-                    //If successful an ACK message will be sent in return
+                    connections.send(connectionId, ackFirstResponse(opcode));
                 } else {
-                    connections.send(connectionId,errorResponse());
-                   //If the user doesn’t exist or the password
-                   //doesn’t match the one entered for the username, sends an ERROR message.
-                   //An ERROR message should also appear if the current client has already succesfully logged in.
-                   // An ERROR message should appear also if the captcha byte is 0.
+                    connections.send(connectionId,errorResponse(opcode));
                 }
                 break;
             case 3: //Logout
                 if(connections.checkIfUserLogIn(connectionId)){
-                    connections.send(connectionId, ackFirstResponse(3));
+                    connections.send(connectionId, ackFirstResponse(opcode));
                     User user = (User) connections.getConnectionsByUser().get(connectionId);
                     user.logOut();
                     connections.getConnectionsByUser().remove(connectionId);
@@ -92,12 +80,9 @@ public class BGSProtocol implements BidiMessagingProtocol<List<Object>> {
                     }
                     shouldTerminate = true;
                     connections.getConnectionsById().remove(connectionId);
-                    //Client may terminate only after reciving ACK message in replay.
                 } else {
-                    connections.send(connectionId,errorResponse());
-                    // If no user is logged in, sends an ERROR message.
+                    connections.send(connectionId,errorResponse(opcode));
                 }
-                //TODO: Check the logic
                 break;
             case 4: // Follow(0)/Unfollow(1)
                 boolean follow = (short)iter.next() == 0;
@@ -110,35 +95,43 @@ public class BGSProtocol implements BidiMessagingProtocol<List<Object>> {
                             dataBase.follow(currentUser, userToFollow);
                             connections.send(connectionId,ackFollowResponse(userNameToFollow));
                         }else {
-                            connections.send(connectionId,errorResponse());
-                            //For a follow command to succeed, a user on the list must not already
-                            //be on the following list of the logged in user.
+                            connections.send(connectionId,errorResponse(opcode));
                         }
                     }else {
                         if (dataBase.checkIfUserFollowerOfOtherUser(currentUser, userToFollow)) {
                             dataBase.unfollow(currentUser, userToFollow);
                             connections.send(connectionId,ackFollowResponse(userNameToFollow));
                         }else {
-                            connections.send(connectionId,errorResponse());
+                            connections.send(connectionId,errorResponse(opcode));
                         }
                     }
                 }else {
-                    connections.send(connectionId,errorResponse());
-                    //The user must be logged in, otherwise an ERROR message will be sent.
+                    connections.send(connectionId,errorResponse(opcode));
                 }
                 break;
             case 5: //Post
-                //
                 String content = (String) iter.next();
                 User currentUser = connections.getUserByConnectionId(connectionId);
                 if(connections.checkIfUserLogIn(connectionId)){
-
+                    List<User> taggedUsers = getTaggedUsers(content);
+                    dataBase.removeBlockedUsers(currentUser,taggedUsers);
+                    List<User> followingUsers =dataBase.getFollowers(currentUser);
+                    List<User> postUsers = new LinkedList<>(followingUsers);
+                    postUsers.addAll(taggedUsers);
+                    List<User> notLoggedUsers = new LinkedList<>();
+                    for (User user : postUsers){
+                        dataBase.addPost(currentUser, new Post(content));
+                        if (user.isLogged()) {
+                            int id = connections.getConnectionIdByUser(user);
+                            connections.send(id, ackPostResponse(currentUser.getUsername(), content));
+                        } else {
+                            notLoggedUsers.add(user);
+                            dataBase.addMessageToPendingNotifications(notLoggedUsers, new Post(content));
+                        }
+                    }
                 }else {
-                    connections.send(connectionId,errorResponse());
-                    //The user must be logged in, otherwise an ERROR message will be sent.
+                    connections.send(connectionId,errorResponse(opcode));
                 }
-
-
                 break;
             case 6: //PM
                 String[] PMData = new String[3];
@@ -151,31 +144,72 @@ public class BGSProtocol implements BidiMessagingProtocol<List<Object>> {
                     String PMUsername = PMData[0];
                     String PMContent = PMData[1];
                     String PMDateTime = PMData[2];  //format DD-MM-YYYY HH:MM
-                    LocalDateTime dateTime = convertToDateTime(PMDateTime);
+                    User sendTo = dataBase.getUserByName(PMUsername);
+                    String filteredMessage = dataBase.filter(PMContent);
+                    LocalDateTime dateTime = convertToDateTime(PMDateTime); ////TODO: ask omer for whet?
+                    currentUser = connections.getUserByConnectionId(connectionId);
+                    if(connections.checkIfUserLogIn(connectionId) && sendTo!=null && dataBase.canCommunicate(currentUser,sendTo)){
+                            List<Object> pm = Arrays.asList(new Object[]{(short)9, (short)0, currentUser.getUsername(),(byte)0,filteredMessage,(byte) 0});
+                            int id = connections.getConnectionIdByUser(sendTo);
+                            connections.send(id, pm);
+                        }
+                    else {
+                        connections.send(connectionId,errorResponse(opcode));
+                    }
 
                 }
-
                 break;
             case 7: //LOGSTAT
-                //TODO: Check the logic
+                //TODO: Check if block
+                currentUser = connections.getUserByConnectionId(connectionId);
                 if(connections.checkIfUserLogIn(connectionId)){
                     for (User user : dataBase.getRegisterdUserList()){
-                        if(user.isLogged()){
-                            int userId = connections.getConnectionIdByUser(user);
-                            connections.send(userId, ackStatAndLogStat(7, user));
+                        if(user.isLogged() && dataBase.canCommunicate(currentUser,user)) {
+                            connections.send(connectionId, ackStatAndLogStat(7, user));
                         }
                     }
                 }else {
-                    connections.send(connectionId,errorResponse());
-                    //The user must be logged in, otherwise an ERROR message will be sent.
+                    connections.send(connectionId,errorResponse(opcode));
                 }
                 break;
             case 8: //STAT
                 String usersString = (String)iter.next();
                 String [] users = usersString.split("\\|");
+                //TODO: Check if block
+                currentUser = connections.getUserByConnectionId(connectionId); ////TODO: ask omer for whet?
+                if(connections.checkIfUserLogIn(connectionId)) {
+                    boolean allUsersExisting = true;
+                    for (int j = 0; j < users.length && allUsersExisting; j++) {
+                        User user = dataBase.getUserByName(users[j]);
+                        if (user == null) {
+                            allUsersExisting = false;
+                        }
+                    }
+                    if (allUsersExisting) {
+                        for (String userName : users) {
+                            User user = dataBase.getUserByName(userName);
+                            connections.send(connectionId, ackStatAndLogStat(8, user));
+                        }
+                    } else {
+                        connections.send(connectionId, errorResponse(opcode));
+                    }
+                }
+                else {
+                    connections.send(connectionId,errorResponse(opcode));
+                }
                 break;
 
+            case 12: //BLOCK
+                String userToBlock_s = (String)iter.next();
+                currentUser = connections.getUserByConnectionId(connectionId);
+                User userToBlock = dataBase.getUserByName(userToBlock_s);
+                if(connections.checkIfUserLogIn(connectionId) && userToBlock != null){
+                    dataBase.block(currentUser,userToBlock);
 
+                }else {
+                    connections.send(connectionId, errorResponse(opcode));
+                }
+                break;
         }
     }
 
@@ -195,7 +229,7 @@ public class BGSProtocol implements BidiMessagingProtocol<List<Object>> {
         int minuets = Integer.parseInt(time[1]);
         return LocalDateTime.of(years,months,days,hours,minuets);
     }
-    
+
     private List<Object> ackFirstResponse(int op){
         List<Object> output = new ArrayList<>();
         output.add(((short)10));
@@ -216,20 +250,47 @@ public class BGSProtocol implements BidiMessagingProtocol<List<Object>> {
         List<Object> output = new ArrayList<>();
         output.add(((short)10));
         output.add(((short)op));
-        output.add(dataBase.age(user)); //<Age>
-        output.add(dataBase.numPosts(user)); //<NumPosts>
-        output.add(dataBase.numFollowers(user)); //<NumFollowers>
-        output.add(dataBase.numFollowing(user)); //<NumFollowing>
+        output.add(user.getAge()); //<Age>
+        output.add(dataBase.getNumPosts(user)); //<NumPosts>
+        output.add(dataBase.getNumFollowersForUser(user)); //<NumFollowers>
+        output.add(dataBase.getFollowingNumForUser(user)); //<NumFollowing>
         return output;
     }
 
-    private List<Object> errorResponse(){
+    private List<Object> ackPostResponse(String username, String content){
+        List<Object> output = new ArrayList<>();
+        output.add(((short)9));
+        output.add(((short)1));
+        output.add(username);
+        output.add((byte)0);
+        output.add(content);
+        output.add((byte)0);
+        return output;
+    }
+
+
+    private List<Object> errorResponse(short messageOpcode){
         List<Object> output = new ArrayList<>();
         output.add(((short)11));
+        output.add(messageOpcode);
         return output;
+    }
+
+    List<User> getTaggedUsers (String postContent){
+        List<User> taggedList = new LinkedList<>();
+        String[] words = postContent.split(" ");
+        for (String str: words) {
+            if (str.charAt(0) == '@') {
+                String username = str.substring(1);
+                User user = dataBase.getUserByName(username);
+                if (user != null ) {
+                    taggedList.add(user);
+                }
+            }
+        }
+        return taggedList;
     }
 
 
 }
-
 

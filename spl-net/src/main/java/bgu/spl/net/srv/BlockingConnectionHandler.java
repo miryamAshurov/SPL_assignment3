@@ -2,7 +2,8 @@ package bgu.spl.net.srv;
 
 import bgu.spl.net.api.MessageEncoderDecoder;
 import bgu.spl.net.api.bidi.BidiMessagingProtocol;
-import bgu.spl.net.srv.bidi.ConnectionHandler;
+import bgu.spl.net.api.bidi.Connections;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -51,11 +52,17 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
     @Override
     public void send(T msg) {
         try {
-            out.write(encdec.encode(msg));
-            out.flush();
-            System.out.println("msg send");
+            if (msg != null) {
+                out.write(encdec.encode(msg));
+                out.flush();
+            }
         } catch (IOException ex) {
             ex.printStackTrace();
         }
+
+    }
+
+    public void init(Connections connections, int connectionId){
+        this.protocol.start(connectionId,connections);
     }
 }

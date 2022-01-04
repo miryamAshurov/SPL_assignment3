@@ -47,8 +47,8 @@ public class User {
 
     public void logOut(){ logged = false; }
 
-    public int getAge(){
-        return (int)ChronoUnit.YEARS.between(birthday,LocalDate.now());
+    public short getAge(){
+        return (short)ChronoUnit.YEARS.between(birthday,LocalDate.now());
     }
 
     public String toString(){

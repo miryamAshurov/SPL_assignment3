@@ -1,9 +1,8 @@
-package bgu.spl.net.srv.bidi;
+package bgu.spl.net.srv;
 
 import bgu.spl.net.api.MessageEncoderDecoder;
 import bgu.spl.net.api.bidi.BidiMessagingProtocol;
-import bgu.spl.net.srv.BaseServer;
-import bgu.spl.net.srv.BlockingConnectionHandler;
+
 import java.util.function.Supplier;
 
 public class BaseServerImp<T> extends BaseServer<T> {
