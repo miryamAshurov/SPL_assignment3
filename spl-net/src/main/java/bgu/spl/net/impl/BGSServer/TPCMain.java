@@ -11,7 +11,6 @@ public class TPCMain {
         try (BaseServer<List<Object>> server = BaseServerImp.threadPerClient(7777,
                 () -> new BGSProtocol(connections),
                 () -> new BidiMessageEncoderDecoder())) {
-            server.setConnections(connections);
             server.serve();
         } catch (Exception e) {
             e.printStackTrace();

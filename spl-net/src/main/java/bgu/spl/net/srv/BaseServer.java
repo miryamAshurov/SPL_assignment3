@@ -26,6 +26,7 @@ public abstract class BaseServer<T> implements Server<T> {
         this.protocolFactory = protocolFactory;
         this.encdecFactory = encdecFactory;
 		this.sock = null;
+        this.connections = ConnectionsImpl.getInstance();
         this.idCounter = 0;
     }
 
@@ -62,7 +63,4 @@ public abstract class BaseServer<T> implements Server<T> {
 
     protected abstract void execute(BlockingConnectionHandler<T>  handler);
 
-    public void setConnections(ConnectionsImpl connections) {
-        this.connections = connections;
-    }
 }
