@@ -1,7 +1,3 @@
-//
-// Created by omer5 on 01/01/2022.
-//
-
 #include "../include/SocketReader.h"
 
 SocketReader::SocketReader(ConnectionHandler *connectionHandler) : connectionHandler(connectionHandler) {}
