@@ -24,7 +24,7 @@ after that the client application should be running and connect to the server.
 ###### If the command is valid, we assume that the format of the message is valid.
 ###### While registering, birthdays should be submitted in the following format DD-MM-YYYY.
 ###### You should not use the following characters: '|', ';'.  the former is used as a separator in STAT command,
-and the latter is used as a delimiter in messages that sent in client-to-server and server-to-client communication.
+###### and the latter is used as a delimiter in messages that sent in client-to-server and server-to-client communication.
 ###### STAT messages should be sent in the following format: STAT user1|user2|...userN|. a pipe ('|') should be in the end of each username.
 
 ### FILTERED WORDS:
