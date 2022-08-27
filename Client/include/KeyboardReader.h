@@ -1,6 +1,3 @@
-//
-// Created by omer5 on 01/01/2022.
-//
 #include <iostream>
 #include <mutex>
 #include <thread>
@@ -9,7 +6,6 @@
 #ifndef SPL3_CLIENT_KEYBOARDREADER_H
 #define SPL3_CLIENT_KEYBOARDREADER_H
 using std::mutex;
-
 
 class KeyboardReader {
 private:
@@ -22,7 +18,5 @@ public:
 	void run();
 
 };
-
-
 
 #endif //SPL3_CLIENT_KEYBOARDREADER_H
