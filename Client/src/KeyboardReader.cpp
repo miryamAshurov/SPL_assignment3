@@ -1,7 +1,3 @@
-//
-// Created by omer5 on 01/01/2022.
-//
-
 #include "../include/KeyboardReader.h"
 KeyboardReader :: KeyboardReader(ConnectionHandler* connectionHandler):connectionHandler(connectionHandler){}
 void KeyboardReader :: run(){
@@ -29,6 +25,5 @@ void KeyboardReader :: run(){
 		}
 
 	}
-
 
 	};
