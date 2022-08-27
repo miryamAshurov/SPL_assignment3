@@ -1,11 +1,5 @@
-//
-// Created by omer5 on 01/01/2022.
-//
-
 #include "../include/MessageEncoderDecoder.h"
 using namespace std;
-
-
 
 int MessageEncoderDecoder:: encode(string msg, char* bytes){
 	vector<string> words = split_input(msg);
@@ -328,4 +322,3 @@ void MessageEncoderDecoder::shortToBytes(short num, char* bytesArr){
 	bytesArr[0] = ((num >> 8) & 0xFF);
 	bytesArr[1] = (num & 0xFF);
 }
-
