@@ -1,4 +1,4 @@
-### Assignment_3 (System Programming):E:
+### Assignment_3 (System Programming):
 In this assignment you will implement a simple social network server and
 client. The communication between the server and the client(s) will be
 performed using a binary communication protocol. A registered user will be
